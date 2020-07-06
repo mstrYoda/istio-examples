@@ -1,0 +1,38 @@
+apiVersion: v1
+items:
+- apiVersion: networking.istio.io/v1alpha3
+  kind: EnvoyFilter
+  metadata:
+    name: sample-lua
+    namespace: foo
+    selfLink: /apis/networking.istio.io/v1alpha3/namespaces/foo/envoyfilters/sample-lua
+  spec:
+    configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: envoy.http_connection_manager
+              subFilter:
+                name: envoy.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          config:
+            inlineCode: |
+              function envoy_on_request(request_handle)
+                request_handle:headers():add("foo", "bar")
+              end
+              function envoy_on_response(response_handle)
+                response_handle:headers():add("foo", "bar")
+              end
+          name: envoy.lua
+    workloadSelector:
+      labels:
+        app: nginx
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
